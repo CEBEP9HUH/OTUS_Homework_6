@@ -1,43 +1,85 @@
 #pragma once
 
 #include <map>
-#include <set>
 
 namespace{
     template<typename T, T default_value>
-    class InfiniteVector{
-    private:   
-        T _default_value = default_value;
-        std::pair<size_t, T> _tmp;
-        bool _tmpSaved = true;
-        std::map<size_t, T> _array;
-        void saveTmp(){
-            if(!_tmpSaved){
-                if(_tmp.second != _default_value){
-                    _array[_tmp.first] = _tmp.second;
-                }
-                else{
-                    _array.erase(_tmp.first);
-                }
-                _tmp.second = _default_value;
-                _tmpSaved = true;
-            }
-        }
+    class MatrixData{
+    private:
+        const T _default_value = default_value;
+        using _index_t = std::pair<size_t, size_t>;
+        std::map<_index_t, T> _matrix;
     public:
-        InfiniteVector() : _tmp{0, _default_value} {};
-        ~InfiniteVector(){};
-        T& operator[](const size_t index){
-            saveTmp();
-            _tmpSaved = false;
-            if(_array.find(index) != _array.end()){
-                _tmp.second = _array[index];
+        MatrixData() : _matrix{} {};
+        MatrixData(const MatrixData&) = default; 
+        MatrixData(MatrixData&&) = default; 
+        MatrixData& operator=(const MatrixData&) = default; 
+        MatrixData& operator=(MatrixData&&) = default; 
+        ~MatrixData() = default;
+
+        T get(const _index_t indexes) {
+            if(_matrix.find(indexes) != _matrix.end()){
+                return _matrix[indexes];
             }
-            _tmp.first = index;
-            return _tmp.second;
+            return _default_value;
         }
+        T insert(const _index_t indexes, const T& value){
+            if(value != _default_value){
+                _matrix[indexes] = value;
+            }
+            else{
+                _matrix.erase(indexes);
+            }
+            return get(indexes);
+        }
+
         size_t size(){
-            saveTmp();
-            return _array.size();
+            return _matrix.size();
+        }
+    };
+
+    template<typename T, T default_value>
+    class MatrixProxy{
+    private:
+        using _index_t = std::pair<size_t, size_t>;
+        using _data_t = MatrixData<T, default_value>;
+        _data_t& _data;
+        _index_t _indexes;
+    public:
+        MatrixProxy(_data_t& data, const size_t row, const size_t col) : _data{data}, _indexes{row, col} {};
+        MatrixProxy(const MatrixProxy&) = default; 
+        MatrixProxy(MatrixProxy&&) = default; 
+        MatrixProxy& operator=(const MatrixProxy&) = default; 
+        MatrixProxy& operator=(MatrixProxy&&) = default; 
+        ~MatrixProxy() = default;
+        bool operator==(const T& value) const {
+            return _data.get(_indexes) == value;
+        }
+        T operator=(const T& value){
+            return _data.insert(_indexes, value);
+        }
+        operator T(){
+            return _data.get(_indexes);
+        }
+    };
+
+    template<typename T, T default_value>
+    class MatrixCol{
+    private:
+        using _data_t = MatrixData<T, default_value>;
+        using _matrix_proxy_t = MatrixProxy<T, default_value>;
+        _data_t& _data;
+        size_t _own_index;
+    public:
+        MatrixCol(_data_t& data, const size_t own_index) :   _data(data), 
+                                                            _own_index{own_index} {};
+        MatrixCol(const MatrixCol&) = default; 
+        MatrixCol(MatrixCol&&) = default; 
+        MatrixCol& operator=(const MatrixCol&) = default; 
+        MatrixCol& operator=(MatrixCol&&) = default; 
+        ~MatrixCol() = default;
+        _matrix_proxy_t operator[](const size_t index){
+            return _matrix_proxy_t(_data, _own_index, index);
         }
     };
 }
@@ -45,26 +87,21 @@ namespace{
 template<typename T, T default_value>
 class InfiniteMatrix2D{
 private:
-    T _default_value = default_value;
-    using InfVec = InfiniteVector<T, default_value>;
-    std::map<size_t, InfVec> _array;
+    using _data_t = MatrixData<T, default_value>;
+    using _col_t = MatrixCol<T, default_value>;
+    _data_t _data;
 public:
-    InfiniteMatrix2D() {};
-    InfiniteMatrix2D(InfiniteMatrix2D& /* other */) {};
-    InfiniteMatrix2D(InfiniteMatrix2D&& /* other */) {};
-    InfiniteMatrix2D& operator=(InfiniteMatrix2D& /* other */) {};
-    InfiniteMatrix2D& operator=(InfiniteMatrix2D&& /* other */) {};
+    InfiniteMatrix2D() = default;
+    InfiniteMatrix2D(InfiniteMatrix2D&) = default;
+    InfiniteMatrix2D(InfiniteMatrix2D&&) = default;
+    InfiniteMatrix2D& operator=(InfiniteMatrix2D&) = default;
+    InfiniteMatrix2D& operator=(InfiniteMatrix2D&&) = default;
     ~InfiniteMatrix2D() {};
 
-    InfVec& operator[](const size_t index){
-        _array.emplace(std::make_pair(index, InfVec()));
-        return _array[index];
+    _col_t operator[](const size_t index){
+        return _col_t(_data, index);
     }
     size_t size(){
-        size_t res = 0;
-        for(auto& arr : _array){
-            res += arr.second.size();
-        }
-        return res;
+        return _data.size();
     }
 };
