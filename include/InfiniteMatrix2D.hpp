@@ -32,9 +32,14 @@ namespace{
             }
             return get(indexes);
         }
-
-        size_t size(){
+        size_t size() const {
             return _matrix.size();
+        }
+        auto begin(){
+            return _matrix.begin();
+        }
+        auto end(){
+            return _matrix.end();
         }
     };
 
@@ -58,7 +63,7 @@ namespace{
         T operator=(const T& value){
             return _data.insert(_indexes, value);
         }
-        operator T(){
+        operator T() const {
             return _data.get(_indexes);
         }
     };
@@ -78,7 +83,7 @@ namespace{
         MatrixCol& operator=(const MatrixCol&) = default; 
         MatrixCol& operator=(MatrixCol&&) = default; 
         ~MatrixCol() = default;
-        _matrix_proxy_t operator[](const size_t index){
+        _matrix_proxy_t operator[](const size_t index) const {
             return _matrix_proxy_t(_data, _own_index, index);
         }
     };
@@ -97,11 +102,31 @@ public:
     InfiniteMatrix2D& operator=(InfiniteMatrix2D&) = default;
     InfiniteMatrix2D& operator=(InfiniteMatrix2D&&) = default;
     ~InfiniteMatrix2D() {};
-
+    class iterator{
+    private:
+        using _init_t = decltype(_data.begin());
+        using _iter_t = std::tuple<size_t, size_t, T>;
+        _init_t _iter;
+    public:
+        iterator(_init_t i) : _iter{i} {};
+        ~iterator() = default;
+        iterator operator++(){ iterator iter = *this; _iter++; return iter;}
+        iterator operator++(int i) {_iter++; return *this;}
+        _iter_t operator*() const {return std::make_tuple(_iter->first.first, _iter->first.second, _iter->second);}
+        _init_t operator->() const {return _iter;}
+        bool operator==(const iterator& other) const {return _iter == other._iter;}
+        bool operator!=(const iterator& other) const {return !(*this == other);}
+    };
     _col_t operator[](const size_t index){
         return _col_t(_data, index);
     }
-    size_t size(){
+    size_t size() const{
         return _data.size();
+    }
+    auto begin(){
+        return iterator(_data.begin());
+    }
+    auto end(){
+        return iterator(_data.end());
     }
 };
