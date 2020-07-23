@@ -14,8 +14,6 @@ script:
 - cmake --build .
 - ctest .
 - cmake --build . --target package
-- mkdir html && cd html
-- cd ..
 deploy:
 - provider: bintray
   file: description.json
