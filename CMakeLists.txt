@@ -1,11 +1,20 @@
 cmake_minimum_required(VERSION 3.2)
 
-# set_var
+# set var
 set(INCLUDE ${CMAKE_BINARY_DIR}/../include)
 set(SOURCE ${CMAKE_BINARY_DIR}/../src)
 set(TESTS ${CMAKE_BINARY_DIR}/../tests)
 set(PROJ_NAME infinite_matrix)
 set(TESTS_NAME infinite_matrix_test)
+
+# set version
+if($ENV{TRAVIS_BUILD_NUMBER})
+    project(${PROJ_NAME} VERSION 0.0.$ENV{TRAVIS_BUILD_NUMBER})
+else()
+    project(${PROJ_NAME} VERSION 0.0.42)
+endif()
+
+configure_file(description.json.in description.json)
 
 # packaging
 #   GTest
@@ -47,6 +56,14 @@ else()
         -Wall -Wextra -Werror -pedantic
     )
 endif()
+
+# packaging
+install(TARGETS ${PROJ_NAME} RUNTIME DESTINATION bin)
+
+set(CPACK_GENERATOR DEB)
+set(CPACK_PACKAGE_CONTACT example@example.com)
+
+include(CPack)
 
 # testing
 enable_testing()
